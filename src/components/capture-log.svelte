@@ -1,0 +1,587 @@
+<script lang="ts">
+  /**
+   * Capture Log
+   *
+   * The Component used to construct a new log.
+   *
+   */
+
+  // Svelte
+  import { onDestroy, onMount } from "svelte";
+  // import { slide } from "svelte/transition";
+  import DateTimeBar from "./date-time-bar/date-time-bar.svelte";
+
+  // Modules
+  import NomieLog from "../modules/nomie-log/nomie-log";
+  import Storage from "../modules/storage/storage";
+
+  //Components
+  import NItem from "../components/list-item/list-item.svelte";
+  import NIcon from "../components/icon/icon.svelte";
+  import NCell from "../components/cell/cell.svelte";
+  import NPoints from "../components/points/points.svelte";
+  import Button from "../components/button/button.svelte";
+  import dayjs from "dayjs";
+  import type { OpUnitType } from "dayjs";
+
+  import domtoimage from "dom-to-image-chrome-fix";
+  import Dymoji from "../components/dymoji/dymoji.svelte";
+  import AutoComplete from "../components/auto-complete/auto-complete.svelte";
+  import NPositivitySelector from "../components/positivity-selector/positivity-selector.svelte";
+  import NSpinner from "../components/spinner/spinner.svelte";
+
+  // Utils
+  import Logger from "../utils/log/log";
+  import time from "../utils/time/time";
+  import ScoreNote from "../modules/scoring/score-note";
+  import TrackerInputer from "../modules/tracker/tracker-inputer";
+  import tick from "../utils/tick/tick";
+  import math from "../utils/math/math";
+
+  // Stores
+  import { Interact } from "../store/interact";
+  import { TrackerStore } from "../store/tracker-store";
+  import { LedgerStore } from "../store/ledger";
+  import { ActiveLogStore } from "../store/active-log";
+  import { UserStore } from "../store/user-store";
+  import { Lang } from "../store/lang";
+  import { PeopleStore } from "../store/People-store";
+  import { ContextStore } from "../store/context-store";
+  import Text from "./text/text.svelte";
+  import PositivityMenu from "./positivity-selector/positivity-menu.svelte";
+  import Icon from "../components/icon/icon.svelte";
+
+  // Consts
+  const console = new Logger("capture-log");
+  const isIOS = !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
+
+  let textarea;
+  let iOSFileInput;
+  let saving = false;
+  let saved = false;
+
+  $: if ($LedgerStore.saving) {
+    saving = true;
+  } else {
+    saving = false;
+  }
+
+  let state = {
+    date: null,
+    dateStarter: dayjs().format("YYYY-MM-DDTHH:mm"),
+    score: 0,
+    showCustomDate: false,
+    autocompleteResults: null,
+    cursorIndex: null,
+    partialTag: null,
+    advanced: false,
+    dateFormated: null,
+  };
+
+  function toggleAdvanced() {
+    state.advanced = !state.advanced;
+  }
+
+  $: if ($ActiveLogStore.end) {
+    let timeFormat = $UserStore.meta.is24Hour ? "HH:mm" : "h:mm a";
+    let dateFormat = $UserStore.meta.is24Hour ? "MM/DD/YYYY" : "MMM D YYYY";
+    state.dateFormated = dayjs($ActiveLogStore.end).format(`${dateFormat} ${timeFormat}`);
+  }
+
+  const methods = {
+    dateAdd(count: number, unit: OpUnitType) {
+      let newDate = dayjs($ActiveLogStore.end || new Date()).add(count, unit);
+      $ActiveLogStore.end = newDate.toDate().getTime();
+    },
+    clearDate() {
+      state.date = null;
+      $ActiveLogStore.start = null;
+      $ActiveLogStore.end = null;
+      state.showCustomDate = false;
+    },
+    clearLocation() {
+      $ActiveLogStore.lat = null;
+      $ActiveLogStore.lng = null;
+      $ActiveLogStore.location = null;
+    },
+    // toggleCustomDate() {
+    //   if (state.date) {
+    //     // They clicked it - solets clear it
+    //     state.date = null;
+    //   } else {
+    //     state.showCustomDate = true;
+    //   }
+    // },
+    async toggleCustomLocation() {
+      if ($ActiveLogStore.lat) {
+        $ActiveLogStore.lat = null;
+        $ActiveLogStore.lng = null;
+      } else {
+        let location: any = await Interact.pickLocation();
+        if (location) {
+          $ActiveLogStore.lat = location.lat;
+          $ActiveLogStore.lng = location.lng;
+          $ActiveLogStore.location = location.name;
+        }
+      }
+    },
+    checkTextareaSize() {
+      if (textarea) {
+        textarea.style.height = "42px";
+        let height = (textarea || {}).scrollHeight || 42;
+        if (textarea && $ActiveLogStore.note.length > 0) {
+          textarea.style.height = (height > 300 ? 300 : height) + "px";
+        } else {
+          textarea.style.height = "42px";
+        }
+        // Cal
+        // methods.calculateScore();
+      }
+    },
+    /**
+     * Check for Auto Complete
+     */
+    autoCompleteSearch(searchTag, type = "tracker") {
+      // Search for Trackers
+      try {
+        if (type == "tracker") {
+          let tkrs = Object.keys($TrackerStore.trackers || {})
+            .map((tag) => {
+              return $TrackerStore.trackers[tag];
+            })
+            .filter((trk) => {
+              return trk.tag.search(searchTag.replace("#", "")) > -1;
+            });
+          return tkrs.length ? tkrs : null;
+
+          // Search for People
+        } else if (type === "person") {
+          try {
+            let People = Object.keys($PeopleStore.People || []).filter(
+              (person) => person.toLowerCase().search(searchTag.replace("@", "")) > -1
+            );
+            return People.length
+              ? People.map((username) => {
+                  return { tag: username, emoji: "👤", type: "person" };
+                })
+              : null;
+          } catch (e) {
+            console.error("Error Caught", e.message);
+          }
+
+          return null;
+
+          // Search for Context
+        } else if (type === "context") {
+          let context = $ContextStore.filter((term) => {
+            let text = searchTag.replace("+", "").toLowerCase();
+            term = term.toLowerCase();
+            return term.search(text.toLowerCase()) > -1;
+          });
+          return context.length
+            ? context.map((c) => {
+                return { tag: c, emoji: "💡", type: "context" };
+              })
+            : null;
+        }
+      } catch (e) {}
+    },
+    calculateScore() {
+      $ActiveLogStore.score = $ActiveLogStore.score || ScoreNote($ActiveLogStore.note, new Date().getTime());
+    },
+    async logSave() {
+      saving = true;
+
+      methods.calculateScore();
+
+      try {
+        await LedgerStore.saveLog($ActiveLogStore);
+        saving = false;
+      } catch (e) {
+        console.error("Error in capture-log logSave", e.message);
+        saving = false;
+      }
+      methods.clear();
+    },
+    async autocompleteText(text) {
+      ActiveLogStore.update((s) => {
+        s.note = s.note.replace(state.partialTag, text + " ");
+        return s;
+      });
+      await tick(1);
+      document.getElementById("textarea-capture-note").focus();
+      methods.autoCompleteDone();
+    },
+    async autoCompleteDone() {
+      setTimeout(() => {
+        state.partialTag = null;
+        state.cursorIndex = null;
+        state.autocompleteResults = null;
+      }, 10);
+    },
+    /**
+     * On Key Press
+     * Process each of the events
+     * - look for modifier+enter to save
+     * - look for +,#,@ to give auto complete
+     */
+    keyPress(event) {
+      // If enter + shift
+      if (event.key === "Enter" && event.getModifierState("Shift")) {
+        event.preventDefault();
+        // If enter + modify er
+      } else if (event.key === "Enter" && (event.getModifierState("Control") || event.getModifierState("Meta"))) {
+        methods.logSave();
+        // All other keyboard events
+      } else {
+        let value = event.target.value;
+        let last = value.charAt(value.length - 1);
+        // If space clear auto complete
+        if (last == " ") {
+          methods.autoCompleteDone();
+        } else if (value.length) {
+          let arr = value.split(" ");
+          let tag = arr[arr.length - 1];
+          state.cursorIndex = arr.length - 1;
+          // If its a tag
+          if (tag.charAt(0) === "#" && tag.length > 1) {
+            state.partialTag = tag;
+            state.autocompleteResults = methods.autoCompleteSearch(tag, "tracker");
+            // If its a person
+          } else if (tag.charAt(0) === "@" && tag.length > 1) {
+            state.partialTag = tag;
+            state.autocompleteResults = methods.autoCompleteSearch(tag, "person");
+            // If it's context
+          } else if (tag.charAt(0) === "+" && tag.length > 1) {
+            state.partialTag = tag;
+            state.autocompleteResults = methods.autoCompleteSearch(tag, "context");
+          } else {
+            state.partialTag = null;
+            state.autocompleteResults = null;
+          }
+        } else {
+          state.partialTag = null;
+          state.autocompleteResults = null;
+        }
+      }
+      methods.checkTextareaSize();
+    },
+    clear() {
+      ActiveLogStore.clear();
+      methods.autoCompleteDone();
+      setTimeout(() => {
+        state.date = null;
+        state.autocompleteResults = null;
+        state.advanced = false;
+        state.cursorIndex = null;
+        state.dateStarter = dayjs().format("YYYY-MM-DDTHH:mm");
+        if (textarea) {
+          textarea.style.height = "40px";
+        }
+      }, 120);
+    },
+  };
+
+  // Clear the settings when saved
+  LedgerStore.hook("onLogSaved", (res) => {
+    // methods.clear();
+    setTimeout(() => {
+      state.advanced = false;
+      methods.autoCompleteDone();
+    });
+  });
+
+  // When a tag is added by a button or other service
+  ActiveLogStore.hook("onAddTag", (res) => {
+    // add space to the end.
+    setTimeout(() => {
+      if (textarea) {
+        textarea.value = textarea.value;
+      }
+      // adjust textarea size
+      methods.checkTextareaSize();
+    }, 10);
+  });
+</script>
+
+<style lang="scss">
+  @import "../scss/utils/__utils.scss";
+
+  :global(#note-capture) {
+    background-color: var(--footer-background);
+    padding-bottom: 4px;
+  }
+
+  :global(.capture-log .tracker-list) {
+    margin-top: -10px !important;
+  }
+
+  .capture-log {
+    padding: 10px;
+    // background-color: var(--header-background);
+    // backdrop-filter: saturate(180%) blur(20px);
+    // border-top: solid 1px var(--header-background);
+    padding-bottom: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .advanced {
+    position: relative;
+    z-index: 1200;
+    margin-top: 10px;
+    padding-top: 1px;
+    padding-bottom: 10px;
+  }
+
+  .save-progress {
+    position: absolute;
+    top: -4px;
+    left: 0;
+    height: 4px;
+    background-color: $green;
+    opacity: 0;
+    width: 0px;
+    transition: all 700ms ease-out;
+    &.saving {
+      background-color: $green;
+      opacity: 1;
+      width: 100%;
+    }
+    &.saved {
+      transition: none;
+      background-color: $green;
+      opacity: 0;
+      width: 0%;
+    }
+    &.clear {
+      transition: none;
+      width: 0;
+    }
+  }
+
+  .save-button {
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    background-color: green;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-bottom: 6px;
+    border: none;
+    font-size: 0.9rem;
+    color: #fff;
+    svg {
+      fill: #fff;
+      height: 15px;
+      width: 15px;
+    }
+  }
+  .mask-textarea {
+    display: flex;
+    align-items: flex-end;
+    min-height: 40px;
+    max-height: 200px;
+    border-radius: 20px;
+    background-color: var(--color-solid-1);
+    // box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    transition: all 0.2s ease-in-out;
+    border: solid 1px var(--color-faded-1);
+
+    .save-button {
+      display: none;
+    }
+
+    &.populated {
+      background-color: rgba($green, 0.2);
+      box-sizing: border-box;
+      .save-button {
+        display: inline-flex;
+      }
+    }
+
+    textarea {
+      // transition: all 0.2s ease-in-out;
+      border: none;
+      background-color: transparent;
+      width: 100%;
+      height: 40px;
+      padding: 8px 0;
+      color: var(--color-inverse-1);
+      margin: 0 16px;
+      margin-right: 0px;
+      font-size: 1rem;
+      &:focus,
+      &:active {
+        outline: none;
+      }
+    }
+  }
+</style>
+
+<div class="capture-wrapper" on:swipeup={methods.swipeUp} on:swipedown={methods.swipeDown}>
+
+  <!-- 
+    AUTO COMPLETE RESULTS
+  -->
+
+  <div class="capture-log">
+    <div class="save-progress {saved ? 'saved' : ''} {saving ? 'saving' : ''} {$LedgerStore.saving ? 'saving' : ''}" />
+    <div class="container p-0">
+
+      <!-- Auto Complet e-->
+      <AutoComplete
+        input={$ActiveLogStore.note}
+        scroller
+        on:select={(evt) => {
+          ActiveLogStore.updateNote(evt.detail.note);
+          textarea.focus();
+          textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+          tick(100).then(() => {
+            methods.checkTextareaSize();
+          });
+        }} />
+      <!-- Note Input -->
+      <div
+        class="mask-textarea {$ActiveLogStore.lat || $ActiveLogStore.note.trim().length > 0 || $ActiveLogStore.photo ? 'populated' : 'empty'}">
+        <button class="btn more-button btn-icon {state.advanced ? 'active' : ''}" on:click={toggleAdvanced}>
+          {#if state.advanced}
+            <NIcon name="more" className="fill-white" />
+          {:else}
+            <NIcon name="more" className="fill-grey-5" />
+          {/if}
+        </button>
+
+        <textarea
+          id="textarea-capture-note"
+          style="overflow:hidden"
+          disabled={saving || saved}
+          bind:value={$ActiveLogStore.note}
+          bind:this={textarea}
+          placeholder={Lang.t('general.whats-up')}
+          on:keydown={methods.keyPress}
+          on:paste={methods.keyPress} />
+
+        <PositivityMenu bind:score={$ActiveLogStore.score} closeBackgroundTap={true} />
+        {#if $LedgerStore.saving}
+          <button class="save-button">
+            <NSpinner size={20} color="#FFFFFF" />
+          </button>
+        {:else}
+          <button class="save-button" on:click={methods.logSave}>
+            <NIcon name="arrowUp" style="fill: #FFF;" size="20" />
+          </button>
+        {/if}
+      </div>
+    </div>
+  </div>
+  {#if state.advanced}
+    <div class="advanced">
+      <div class="container">
+        <!-- Score -->
+        <!-- <NItem truncate compact className="mr-2 solo text-sm p-0">
+          <NPositivitySelector
+            size="xl"
+            score={$ActiveLogStore.score}
+            on:change={(evt) => {
+              $ActiveLogStore.score = evt.detail;
+            }} />
+        </NItem> -->
+        <!-- Location -->
+        <NItem truncate clickable className="mr-2 solo text-sm" on:click={methods.toggleCustomLocation}>
+          <div slot="left" class="text-sm text-bold">
+            <NIcon name="pin" className="mr-2 fill-inverse-2" size="16" />
+          </div>
+          {#if !$ActiveLogStore.lat}
+            <Text size="sm">{Lang.t('general.location', 'Location')}</Text>
+          {:else}
+            <Text size="sm">
+              {$ActiveLogStore.location || `${math.round($ActiveLogStore.lat, 100)},${math.round($ActiveLogStore.lng, 100)}`}
+            </Text>
+          {/if}
+          <div slot="right" class="n-row">
+            {#if $ActiveLogStore.lat}
+              <button class="btn btn-clear btn-icon" on:click|stopPropagation={methods.clearLocation}>
+                <NIcon name="close" className="fill-inverse" size="22" />
+              </button>
+            {:else if $UserStore.alwaysLocate}
+              <Text size="sm" faded className="pr-1">Current</Text>
+            {:else}
+              <Text size="sm" faded className="pr-1">None</Text>
+            {/if}
+          </div>
+        </NItem>
+        <!-- Date / Time -->
+
+        <NItem solo className="p-0" style="overflow:hidden">
+          <DateTimeBar
+            date={$ActiveLogStore.end}
+            calendarClass="px-2 mb-1"
+            on:change={(evt) => {
+              $ActiveLogStore.end = dayjs(evt.detail).toDate().getTime();
+            }}>
+            <div slot="left">
+              <Button
+                size="xs"
+                color="transparent"
+                className="px-1"
+                delay={0}
+                on:click={() => {
+                  methods.dateAdd(-1, 'day');
+                }}>
+                <Icon name="chevronLeft" size="14" />
+              </Button>
+              <Button
+                size="xs"
+                color="transparent"
+                className="px-1"
+                delay={0}
+                on:click={() => {
+                  methods.dateAdd(1, 'day');
+                }}>
+                <Icon name="chevronRight" size="14" />
+              </Button>
+            </div>
+            <div slot="right">
+              {#if $ActiveLogStore.end}
+                <button class="btn btn-icon mr-2" on:click|stopPropagation={methods.clearDate}>
+                  <NIcon name="close" className="fill-inverse" size="22" />
+                </button>
+              {/if}
+            </div>
+          </DateTimeBar>
+        </NItem>
+
+        <!-- <NItem compact truncate className="bg-transparent mt-1 mb-2 mr-2 solo text-sm" on:click={methods.selectDate}>
+          
+          <div slot="left" class="text-sm text-bold">
+            <NIcon name="time" className="mr-2 fill-primary-bright" size="16" />
+          </div>
+          <div>
+            {#if !$ActiveLogStore.end}
+              {Lang.t('general.set-date', 'Set Date')}
+            {:else}
+              <strong>{state.dateFormated}</strong>
+            {/if}
+          </div>
+          <div slot="right" class="n-row">
+            {#if $ActiveLogStore.end}
+              <button class="btn btn-clear btn-icon" on:click|stopPropagation={methods.clearDate}>
+                <NIcon name="close" className="fill-red" size="22" />
+              </button>
+            {:else}
+              <label class="text-sm text-faded-3">Now</label>
+            {/if}
+          </div>
+        </NItem> -->
+      </div>
+    </div>
+  {/if}
+
+</div>

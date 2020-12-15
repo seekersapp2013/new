@@ -1,0 +1,25 @@
+export default {
+  storage_engine: "local", // local or blockstack
+  book_time_format: "YYYY-w",
+  book_time_unit: "week",
+  data_root: "v5-data",
+  data_People_key: "People-v5",
+  book_root: "v5-data/books",
+  tracker_file: "trackers.json",
+  board_file: "boards.json",
+  always_locate_key: "always-locate",
+  dark_mode_key: "dark-mode",
+  theme_key: "theme",
+  user_meta_path: "v5-data/meta.json",
+  support_email: "info@creditsense.com.ng",
+  support_contact: "info@creditsense.com.ng",
+  patreon: "https://www.patreon.com/bePatron?u=40136531",
+  api: "https://nomieapi.com",
+  positivity: [
+    { emoji: "😡", score: -2 },
+    { emoji: "👎", score: -1 },
+    { emoji: "😐", score: 0 },
+    { emoji: "👍", score: 1 },
+    { emoji: "🤗", score: 2 },
+  ],
+};

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf8" />
+    <title>Grader NG</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="max-age=600" />
+    <meta name="description" content="Open Source Mood Tracking" />
+    <meta name="apple-mobile-web-app-title" content="Grader NG" />
+    <meta name="theme-color" content="#319ed7" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="full-screen" content="yes" />
+
+    <link rel="apple-touch-icon" href="/images/icons/nomie-512.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/icons/nomie-192.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="APP_URL" />
+    <meta property="og:title" content="Grader NG" />
+    <meta property="og:description" content="Private Mood and Life Tracking" />
+    <meta property="og:image" content="" />
+
+    <meta name="twitter:card" content="app" />
+    <meta name="twitter:site" content="@nomieapp" />
+    <meta name="twitter:creator" content="@brandoncorbin" />
+    <meta name="twitter:title" content="Nomie.app" />
+    <meta name="twitter:description" content="Mood Tracking" />
+    <meta name="twitter:app:country" content="us" />
+
+    <base href="/" />
+
+    <!-- main is from scss/main.scss -->
+    <link rel="stylesheet" href="/main.css?v=APP_VERSION" />
+  </head>
+
+  <body>
+    <noscript>
+      Sorry. Nomie requires Javascript to run.
+    </noscript>
+
+    <div class="loading-screen delete-on-app">
+      <div class="version">&copy; 2020</div>
+    </div>
+
+    <script src="/js/vendors.js"></script>
+    <script src="/bundle.js?v=APP_VERSION"></script>
+    <link rel="stylesheet" href="/css/vendors.css?v=APP_VERSION" defer />
+    <link rel="stylesheet" href="/bundle.css?v=APP_VERSION" />
+    <!-- 
+      Purch
+      For in-app purchases
+    -->
+    <!-- <script>
+      ((w, d) => {
+        window["$purch"] = undefined;
+        var s = document.createElement("script");
+        s.src = "https://purch.dev/v1/purch.js";
+        s.async = 1;
+        d.head.appendChild(s);
+        s.onload = () => {
+          $purch.init({
+            appId: "nomie",
+            key: "APP_PURCH_KEY",
+          });
+        };
+      })(window, document);
+    </script> -->
+    <!-- 
+      SimpleAnalytics 
+      Privacy aware analytics. They don't track IP or use Cookies.
+      Learn more at https://docs.simpleanalytics.com/what-we-collect
+    -->
+    <script async defer src="https://cdn.simpleanalytics.io/hello.js"></script>
+    <noscript><img src="https://api.simpleanalytics.io/hello.gif" alt="" /></noscript>
+    <script src="https://widget.prefinery.com/widget/v2/9diioot2.js" defer></script>
+  </body>
+</html>
