@@ -157,7 +157,7 @@
     timer.check("UserStore.onReady fired");
     console.log("🌳🌳🌳🌳🌳🌳🌳🌳🌳🐘🌳🌳🌳🌳🌳🌳🌳🌳🌳");
     console.log("🌳🌳🌳🌳🌳🌳 Welcome to 🌳🌳🌳🌳🌳🌳🌳🌳");
-    console.log("🌳🌳🌳🌳🌳🌳 NOMIE APP_VERSION 🌳🌳🌳🌳🌳🌳🌳");
+    console.log("🌳🌳🌳🌳🌳🌳 GRADER APP_VERSION 🌳🌳🌳🌳🌳🌳🌳");
     console.log("🌳🌳🌳🌳🌳🌳🌳🌳🌳🐘🌳🌳🌳🌳🌳🌳🌳🌳🌳🌳");
     // Set the user if they're logged in
     ready = true;

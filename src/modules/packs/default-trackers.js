@@ -1,5 +1,5 @@
 export default {
-  label: `Nomie Starter Pack`,
+  label: `Grader Starter Pack`,
   trackers: {
     mood: {
       tag: "mood",
@@ -220,6 +220,110 @@ export default {
       one_tap: false,
       label: "Weight"
     },
+
+    smartStash: {
+      tag: "smartStash",
+      type: "value",
+      color: "#0693E3",
+      math: "sum",
+      ignore_zeros: false,
+      uom: "points",
+      emoji: "💰",
+      default: null,
+      score: null,
+      score_calc: null,
+      goal: null,
+      one_tap: false,
+      label: "Smart Stash"
+    },
+
+    income: {
+      tag: "income",
+      type: "value",
+      color: "#546E7A",
+      math: "sum",
+      ignore_zeros: true,
+      uom: "points",
+      emoji: "📈",
+      default: "30000",
+      max: "100000000",
+      min: "10000",
+      one_tap: false,
+      label: "income",
+      score_calc: [
+        {
+          if: "value",
+          is: "gt",
+          v: "100000",
+          sc: "100"
+        },
+        {
+          if: "value",
+          is: "lt",
+          v: "10000",
+          sc: "10"
+        }
+      ]
+    },
+    
+
+    expenses: {
+      tag: "expenses",
+      type: "value",
+      color: "#546E7A",
+      math: "sum",
+      ignore_zeros: true,
+      uom: "points",
+      emoji: "💸",
+      default: "1000",
+      max: "100000000",
+      min: "10000",
+      one_tap: false,
+      label: "expenses",
+      score_calc: [
+        {
+          if: "value",
+          is: "gt",
+          v: "100000",
+          sc: "100"
+        },
+        {
+          if: "value",
+          is: "lt",
+          v: "10000",
+          sc: "10"
+        }
+      ]
+    },
+
+    employment: {
+      tag: "employment",
+      type: "value",
+      color: "#546E7A",
+      ignore_zeros: true,
+      uom: "points",
+      emoji: "💸",
+      default: "2010",
+      max: "100000000",
+      min: "10000",
+      one_tap: false,
+      label: "Employment Since (in years)",
+      score_calc: [
+        {
+          if: "value",
+          is: "gt",
+          v: "100000",
+          sc: "100"
+        },
+        {
+          if: "value",
+          is: "lt",
+          v: "10000",
+          sc: "10"
+        }
+      ]
+    },
+
     peed: {
       tag: "peed",
       type: "tick",

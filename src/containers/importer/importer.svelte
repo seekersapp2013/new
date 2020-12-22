@@ -261,7 +261,7 @@
         <p class="text-sm text-faded-3 mb-4">
           Import backups (not CSVs)
           <br />
-          from Nomie 1, 2, 3, 4 and 5!
+          from Grader 1, 2, 3, 4 and 5!
         </p>
         <Button
           block
@@ -269,7 +269,7 @@
           on:click={() => {
             fileInput.click();
           }}>
-          Select Nomie Backup...
+          Select Grader Backup...
         </Button>
         <input class="d-none" type="file" bind:this={fileInput} on:change={methods.onImportFile} />
       </div>

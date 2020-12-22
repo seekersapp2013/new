@@ -13,8 +13,8 @@ export default {
   user_meta_path: "v5-data/meta.json",
   support_email: "info@creditsense.com.ng",
   support_contact: "info@creditsense.com.ng",
-  patreon: "https://www.patreon.com/bePatron?u=40136531",
-  api: "https://nomieapi.com",
+  patreon: "",
+  api: "https://grader.ng",
   positivity: [
     { emoji: "😡", score: -2 },
     { emoji: "👎", score: -1 },

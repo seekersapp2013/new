@@ -1,19 +1,19 @@
 {
-  "name": "nomie",
+  "name": "grader",
   "version": "5.4.1",
-  "homepage": "https://nomie.app",
+  "homepage": "https://grader.ng",
   "bugs": {
-    "url": "https://github.com/open-nomie/nomie/issues",
-    "email": "support@happydata.org"
+    "url": "https://github.com/seekersapp2013/graderng",
+    "email": "easycom2011@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/open-nomie/nomie.git"
+    "url": "https://github.com/seekersapp2013/graderng"
   },
   "author": {
     "name": "Brandon Corbin",
     "email": "support@happydata.org",
-    "url": "https://nomie.app"
+    "url": "https://grader.ng"
   },
   "scripts": {
     "generate-whatsnew": "node build-tools/generate-whats-new.js && git add . && git commit -m 'build: whats new'",

@@ -215,7 +215,7 @@ Note: Your data will not automatically move over. You'll first need to export it
    let money = basic;
   let numberOfBuilding = 0;
   let buildingProduction = 1; // $ produced per building per tick
-  let tickSpeed = 1000;
+  let tickSpeed = 8.64e+7;
     
   // reactive declarations
   $: cantBuy = cost > money;
@@ -426,7 +426,6 @@ Note: Your data will not automatically move over. You'll first need to export it
               <NItem title={Lang.t('You Gained')}>
                 <span slot="right">{productionPerTick} </span>
               </NItem>
-
               <!-- <h1>You have {money} $!</h1> -->
 
               <!-- <button on:click={updateNumbers} class:cantbuy={cantBuy} disabled={cantBuy}>
